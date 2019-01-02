@@ -14,6 +14,7 @@ Initialize the submodule (points to 0.9.4 release):
 
 ```
 git submodule init
+git submodule update
 ```
 
 Use `maven` to install the jar:
