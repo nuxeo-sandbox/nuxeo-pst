@@ -1,8 +1,8 @@
-# Nuxeo Utils: Log4j
+# Nuxeo Utils: PST Import
 
-[![Build Status](https://qa.nuxeo.org/jenkins/buildStatus/icon?job=Sandbox/sandbox_nuxeo-log4j-utils-master)](https://qa.nuxeo.org/jenkins/view/Sandbox/job/Sandbox/job/sandbox_nuxeo-log4j-utils-master/)
+[![Build Status](https://qa.nuxeo.org/jenkins/buildStatus/icon?job=Sandbox/sandbox_nuxeo-pst-master)](https://qa.nuxeo.org/jenkins/view/Sandbox/job/Sandbox/job/sandbox_nuxeo-pst-master/)
 
-Operation to change log level of specified categories at runtime.  By default, changes the CONSOLE appender for logging.
+Import PST-compatible mailboxes into Nuxeo.
 
 ## Dependencies
 
@@ -29,20 +29,13 @@ Build with maven (at least 3.3)
 ```
 mvn clean install
 ```
-> Package built here: `nuxeo-log4j-util-package/target`
+> Package built here: `nuxeo-pst-importer-package/target`
 
 > Install with `nuxeoctl mp-install <package>`
 
 ## Operation
 
-Name: `Services.LogLevel`
-
-Parameters:
-- categories: comma-separated list of log categories to manipulate
-- debug: (true) or false, enable or disable debug logging
-- children: true or (false), change children of parent categories
-
-> Changes CONSOLE appender
+`TBD`
 
 ## Support
 
