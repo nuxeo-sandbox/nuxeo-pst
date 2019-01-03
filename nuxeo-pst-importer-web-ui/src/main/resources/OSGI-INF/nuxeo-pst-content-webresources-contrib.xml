@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.labs.pst.web.ui.resources.contrib">
+  <require>org.nuxeo.web.ui.resources</require>
+
+  <extension target="org.nuxeo.ecm.platform.WebResources" point="resources">
+    <resource name="nuxeo-pst-content.html" type="import" shrinkable="false">
+      <uri>/ui/nuxeo-pst-content/nuxeo-pst-content.html</uri>
+    </resource>
+  </extension>
+
+  <extension target="org.nuxeo.ecm.platform.WebResources" point="bundles">
+    <bundle name="web-ui">
+      <resources append="true">
+        <resource>nuxeo-pst-content.html</resource>
+      </resources>
+    </bundle>
+  </extension>
+</component>

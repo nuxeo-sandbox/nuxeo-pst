@@ -6,28 +6,27 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Stack;
 import java.util.Vector;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.poi.util.IOUtils;
 import org.nuxeo.common.utils.Path;
+import org.nuxeo.ecm.automation.core.util.DocumentHelper;
 import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.blobholder.BlobHolder;
 import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
+import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.transientstore.work.TransientStoreWork;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.transaction.TransactionHelper;
 
-import com.google.common.html.HtmlEscapers;
+import com.pff.PSTAttachment;
 import com.pff.PSTException;
 import com.pff.PSTFile;
 import com.pff.PSTFolder;
@@ -203,14 +202,15 @@ public class PSTImportWork extends TransientStoreWork {
     protected boolean isValidName(String name) {
         return StringUtils.isNotBlank(name);
     }
+    
+    protected String nullStrip(String name) {
+        return StringUtils.remove(name, '\0');
+    }
 
     protected String getValidName(String name) {
-        if (StringUtils.containsAny(name, '/', '\\')) {
-            try {
-                return URLEncoder.encode(name, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-            }
-        }
+        name = nullStrip(name);
+        name = StringUtils.replaceChars(name, '\\', '-');
+        name = StringUtils.replaceChars(name, '/', '-');
         return name;
     }
 
@@ -261,14 +261,26 @@ public class PSTImportWork extends TransientStoreWork {
         pstDoc.setPropertyValue("pst:read", msg.isRead());
         pstDoc.setPropertyValue("pst:unsent", msg.isUnsent());
         pstDoc.setPropertyValue("pst:categories", msg.getColorCategories());
+
+        if (config.attachments && msg.hasAttachments()) {
+            int attach = msg.getNumberOfAttachments();
+            Property attachProp = pstDoc.getProperty("files:files");
+            for (int i = 0; i < attach; i++) {
+                PSTAttachment a = msg.getAttachment(i);
+                Blob ba = Blobs.createBlob(a.getFileInputStream(), nullStrip(a.getMimeTag()));
+                ba.setFilename(nullStrip(a.getFilename()));
+                DocumentHelper.addBlob(attachProp, ba);
+            }
+        }
     }
 
     private ArrayList<String> addressList(PSTMessage msg, int recipientType) throws PSTException, IOException {
         ArrayList<String> list = new ArrayList<>();
-        for (int i = 0; i < msg.getNumberOfRecipients(); i++) {
+        int recip = msg.getNumberOfRecipients();
+        for (int i = 0; i < recip; i++) {
             PSTRecipient rec = msg.getRecipient(i);
             if (rec.getRecipientType() == recipientType) {
-                list.add(rec.getEmailAddress());
+                list.add(nullStrip(rec.getEmailAddress()));
             }
         }
         return list;
@@ -299,7 +311,7 @@ public class PSTImportWork extends TransientStoreWork {
             commit();
         }
     }
-    
+
     private void commit() {
         commitOrRollbackTransaction();
         startTransaction();

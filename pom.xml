@@ -16,6 +16,7 @@
 
   <modules>
     <module>nuxeo-pst-importer-core</module>
+    <module>nuxeo-pst-importer-web-ui</module>
     <module>nuxeo-pst-importer-package</module>
   </modules>
 
@@ -72,6 +73,11 @@
       <dependency>
         <groupId>org.nuxeo.labs.pst</groupId>
         <artifactId>nuxeo-pst-importer-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.labs.pst</groupId>
+        <artifactId>nuxeo-pst-importer-web-ui</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
