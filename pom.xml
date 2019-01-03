@@ -4,12 +4,12 @@
   <parent>
     <groupId>org.nuxeo.ecm.distribution</groupId>
     <artifactId>nuxeo-distribution</artifactId>
-    <version>10.2</version>
+    <version>10.3</version>
   </parent>
 
   <groupId>org.nuxeo.labs.pst</groupId>
   <artifactId>nuxeo-pst-importer-parent</artifactId>
-  <version>10.2-SNAPSHOT</version>
+  <version>10.3-SNAPSHOT</version>
   <name>Nuxeo pst importer parent</name>
   <description>Nuxeo PST Importer</description>
   <packaging>pom</packaging>

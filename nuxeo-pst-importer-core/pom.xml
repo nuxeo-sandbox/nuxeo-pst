@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.nuxeo.labs.pst</groupId>
     <artifactId>nuxeo-pst-importer-parent</artifactId>
-    <version>10.2-SNAPSHOT</version>
+    <version>10.3-SNAPSHOT</version>
   </parent>
   <artifactId>nuxeo-pst-importer-core</artifactId>
   <name>Nuxeo pst importer core</name>
@@ -13,12 +13,22 @@
 
   <dependencies>
     <dependency>
+      <groupId>com.pff</groupId>
+      <artifactId>java-libpst</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.nuxeo.ecm.automation</groupId>
       <artifactId>nuxeo-automation-core</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.pff</groupId>
-      <artifactId>java-libpst</artifactId>
+      <groupId>org.nuxeo.ecm.platform</groupId>
+      <artifactId>nuxeo-platform-mail-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.nuxeo.ecm.platform</groupId>
+      <artifactId>nuxeo-platform-mail-types</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.nuxeo.ecm.automation</groupId>

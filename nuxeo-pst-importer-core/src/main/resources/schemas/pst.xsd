@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<xs:schema targetNamespace="http://www.nuxeo.org/ecm/schemas/pst/" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:pst="http://www.nuxeo.org/ecm/schemas/pst/">
+
+  <xs:include schemaLocation="base.xsd"/>
+
+  <xs:element name="priority" type="xs:integer"/>
+  <xs:element name="replied" type="xs:boolean"/>
+  <xs:element name="forwarded" type="xs:boolean"/>
+  <xs:element name="flagged" type="xs:boolean"/>
+  <xs:element name="fromSender" type="xs:boolean"/>
+  <xs:element name="read" type="xs:boolean"/>
+  <xs:element name="unsent" type="xs:boolean"/>
+  <xs:element name="categories" type="pst:stringList"/>
+
+</xs:schema>

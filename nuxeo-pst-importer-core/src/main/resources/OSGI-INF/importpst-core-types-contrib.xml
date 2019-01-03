@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.labs.pst.core.types.contrib">
+
+  <require>org.nuxeo.ecm.core.CoreExtensions</require>
+  <require>org.nuxeo.ecm.platform.mail.core.types.contrib</require>
+
+  <extension target="org.nuxeo.ecm.core.schema.TypeService" point="schema">
+
+    <schema name="pst" src="schemas/pst.xsd" prefix="pst"/>
+
+  </extension>
+
+  <extension target="org.nuxeo.ecm.core.schema.TypeService" point="doctype">
+
+    <doctype name="PSTMessage" extends="MailMessage">
+      <schema name="pst"/>
+      <schema name="mail"/>
+      <schema name="common"/>
+      <schema name="dublincore"/>
+      <schema name="uid"/>
+      <schema name="files"/>
+      <facet name="Commentable" />
+      <facet name="HiddenInCreation" />
+      <facet name="NXTag" />
+    </doctype>
+
+    <doctype name="PSTFolder" extends="Folder">
+      <subtypes>
+        <type>PSTMessage</type>
+      </subtypes>
+    </doctype>
+
+    <!-- allow mail folders within workspaces -->
+    <doctype name="Workspace" append="true">
+      <subtypes>
+        <type>PSTFolder</type>
+      </subtypes>
+    </doctype>
+
+  </extension>
+
+</component>

@@ -1,0 +1,13 @@
+<component name="org.nuxeo.labs.pst.lifecycle.contrib">
+
+  <require>org.nuxeo.ecm.core.CoreExtensions</require>
+  <require>org.nuxeo.labs.pst.core.types.contrib</require>
+
+  <extension target="org.nuxeo.ecm.core.lifecycle.LifeCycleService" point="types">
+    <types>
+      <type name="PSTMessage">default</type>
+      <type name="PSTFolder">default</type>
+    </types>
+  </extension>
+
+</component>

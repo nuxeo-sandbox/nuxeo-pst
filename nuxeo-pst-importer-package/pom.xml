@@ -3,12 +3,11 @@
   <parent>
     <groupId>org.nuxeo.labs.pst</groupId>
     <artifactId>nuxeo-pst-importer-parent</artifactId>
-    <version>10.2-SNAPSHOT</version>
+    <version>10.3-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>nuxeo-pst-importer-package</artifactId>
-  <version>10.2-SNAPSHOT</version>
   <packaging>zip</packaging>
   <name>Nuxeo pst importer package - Nuxeo import mailbox pst file</name>
 

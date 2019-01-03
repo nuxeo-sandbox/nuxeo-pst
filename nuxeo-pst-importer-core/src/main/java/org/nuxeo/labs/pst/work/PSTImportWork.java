@@ -1,6 +1,39 @@
 package org.nuxeo.labs.pst.work;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Stack;
+import java.util.Vector;
+
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.poi.util.IOUtils;
+import org.nuxeo.common.utils.Path;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.blobholder.BlobHolder;
+import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.transientstore.work.TransientStoreWork;
+import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.transaction.TransactionHelper;
+
+import com.google.common.html.HtmlEscapers;
+import com.pff.PSTException;
+import com.pff.PSTFile;
+import com.pff.PSTFolder;
+import com.pff.PSTMessage;
+import com.pff.PSTObject;
+import com.pff.PSTRecipient;
 
 public class PSTImportWork extends TransientStoreWork {
 
@@ -8,34 +41,268 @@ public class PSTImportWork extends TransientStoreWork {
      * 
      */
     private static final long serialVersionUID = 1L;
-    
-    private String key;
-    
+
+    protected static final Log LOG = LogFactory.getLog(PSTImportWork.class);
+
+    protected PSTImportConfig config = new PSTImportConfig();
+
+    protected String inputEntryKey;
+
+    /**
+     * @since 10.1
+     */
+    protected ManagedBlob managedBlob;
+
+    private int depth = -1;
+
+    private int saved = 0;
+
+    protected Stack<String> folders = new Stack<>();
+
+    protected String folderishType = "PSTFolder";
+
+    protected String messageType = "PSTMessage";
+
     public PSTImportWork() {
         super();
     }
 
-    public PSTImportWork(String id) {
+    public PSTImportWork(String id, BlobHolder blobHolder, PSTImportConfig config) {
         super(id);
+        this.config = config;
+        storeInputBlobHolder(blobHolder);
     }
 
-    @Override
-    public String getTitle() {
-        return null;
+    protected void storeInputBlobHolder(BlobHolder blobHolder) {
+        if (!storeManagedBlob(blobHolder)) {
+            // standard conversion
+            inputEntryKey = entryKey + "_input";
+            putBlobHolder(inputEntryKey, blobHolder);
+        }
     }
 
-    @Override
-    public void work() {
-        // TODO Auto-generated method stub
+    /**
+     * @since 10.1
+     */
+    protected boolean storeManagedBlob(BlobHolder blobHolder) {
+        Blob blob = blobHolder.getBlob();
+        if (!(blob instanceof ManagedBlob) || !(blob instanceof Serializable) || blobHolder.getBlobs().size() > 1) {
+            return false;
+        }
 
+        ManagedBlob mBlob = (ManagedBlob) blob;
+        this.managedBlob = mBlob;
+        return true;
+
+    }
+
+    protected BlobHolder retrieveInputBlobHolder() {
+        return managedBlob != null ? new SimpleBlobHolder(managedBlob) : getBlobHolder(inputEntryKey);
     }
 
     @Override
     public void cleanUp(boolean ok, Exception e) {
-        // TODO Auto-generated method stub
         super.cleanUp(ok, e);
+        if (inputEntryKey != null) {
+            removeBlobHolder(inputEntryKey);
+        }
+    }
+
+    @Override
+    public String getTitle() {
+        return "PST Importer";
+    }
+
+    @Override
+    public void work() {
+        setStatus("Importing");
+
+        BlobHolder inputBlobHolder = retrieveInputBlobHolder();
+        if (inputBlobHolder == null) {
+            return;
+        }
+
+        for (Blob data : inputBlobHolder.getBlobs()) {
+            try {
+                openSystemSession();
+                processBlob(data);
+                commit();
+            } catch (PSTException | IOException e) {
+                LOG.error("Error processing PST import", e);
+            } finally {
+                closeSession();
+            }
+        }
+
+        setStatus(null);
+    }
+
+    protected void processBlob(Blob data) throws IOException, PSTException {
+        File pstFile = data.getFile();
+        boolean tempFile = false;
+        if (pstFile == null) {
+            pstFile = Framework.createTempFile("pst", "_import.pst");
+            tempFile = true;
+            try (OutputStream fout = new BufferedOutputStream(new FileOutputStream(pstFile))) {
+                IOUtils.copy(data.getStream(), fout);
+            }
+        }
+
+        PSTFile reader = new PSTFile(pstFile);
+        processFolder(config.getParent(), reader.getRootFolder());
+        if (tempFile) {
+            pstFile.delete();
+        }
+    }
+
+    protected void processFolder(Path parent, PSTFolder folder) throws PSTException, java.io.IOException {
+        this.depth++;
+        // the root folder doesn't have a display name
+        Path container = parent;
+
+        if (this.depth > 0) {
+            // System.out.println(folder.getDisplayName());
+            folders.push(folder.getDisplayName());
+            container = createFolder(container, folder.getDisplayName());
+        }
+
+        // go through the folders...
+        if (folder.hasSubfolders()) {
+            final Vector<PSTFolder> childFolders = folder.getSubFolders();
+            for (final PSTFolder childFolder : childFolders) {
+                processFolder(container, childFolder);
+            }
+        }
+
+        // and now the emails for this folder
+        if (folder.getContentCount() > 0) {
+            this.depth++;
+            PSTObject child = folder.getNextChild();
+            while (child != null) {
+                // Filter messages
+                if (config.test(child)) {
+                    // Add message
+                    DocumentModel doc = createObject(container, child);
+                    if (doc != null)
+                        LOG.info("Added: " + doc);
+                }
+
+                // Get next message
+                child = folder.getNextChild();
+            }
+            this.depth--;
+        }
+
+        if (this.depth > 0) {
+            // System.out.println(folder.getDisplayName());
+            folders.pop();
+        }
+        this.depth--;
+    }
+
+    protected boolean isValidName(String name) {
+        return StringUtils.isNotBlank(name);
+    }
+
+    protected String getValidName(String name) {
+        if (StringUtils.containsAny(name, '/', '\\')) {
+            try {
+                return URLEncoder.encode(name, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+            }
+        }
+        return name;
+    }
+
+    private DocumentModel createObject(Path container, PSTObject child) {
+        // We need to create a widget
+        PSTMessage msg = (PSTMessage) child;
+        String itemName = null;
+        if (isValidName(msg.getSubject())) {
+            itemName = getValidName(msg.getSubject());
+        } else {
+            itemName = "Mail Message (Subject Unreadable)";
+        }
+        String docName = container.append(itemName).toString();
+        LOG.warn("Creating: " + docName);
+        DocumentModel pstDoc = session.createDocumentModel(container.toString(), itemName, messageType);
+        pstDoc.setPropertyValue("dc:title", itemName);
+        pstDoc.setPropertyValue("dc:created", msg.getActionDate());
+        try {
+            populateMessage(msg, pstDoc);
+            pstDoc = session.createDocument(pstDoc);
+            pstDoc = session.saveDocument(pstDoc);
+            inc();
+            return pstDoc;
+        } catch (PSTException | IOException e) {
+            LOG.error("Error populating message", e);
+        }
+        return null;
+    }
+
+    private void populateMessage(PSTMessage msg, DocumentModel pstDoc) throws PSTException, IOException {
+        pstDoc.setPropertyValue("mail:messageId", msg.getInternetMessageId());
+        pstDoc.setPropertyValue("mail:sender", msg.getSenderEmailAddress());
+        pstDoc.setPropertyValue("mail:sending_date", msg.getActionDate());
+        pstDoc.setPropertyValue("mail:recipients", addressList(msg, PSTMessage.RECIPIENT_TYPE_TO));
+        pstDoc.setPropertyValue("mail:cc_recipients", addressList(msg, PSTMessage.RECIPIENT_TYPE_CC));
+        if (StringUtils.isNotBlank(msg.getBody())) {
+            pstDoc.setPropertyValue("mail:text", msg.getBody());
+        }
+        if (StringUtils.isNotBlank(msg.getBodyHTML())) {
+            pstDoc.setPropertyValue("mail:htmlText", msg.getBodyHTML());
+        }
+
+        pstDoc.setPropertyValue("pst:priority", msg.getPriority());
+        pstDoc.setPropertyValue("pst:replied", msg.hasReplied());
+        pstDoc.setPropertyValue("pst:forwarded", msg.hasForwarded());
+        pstDoc.setPropertyValue("pst:flagged", msg.isFlagged());
+        pstDoc.setPropertyValue("pst:fromSender", msg.isFromMe());
+        pstDoc.setPropertyValue("pst:read", msg.isRead());
+        pstDoc.setPropertyValue("pst:unsent", msg.isUnsent());
+        pstDoc.setPropertyValue("pst:categories", msg.getColorCategories());
+    }
+
+    private ArrayList<String> addressList(PSTMessage msg, int recipientType) throws PSTException, IOException {
+        ArrayList<String> list = new ArrayList<>();
+        for (int i = 0; i < msg.getNumberOfRecipients(); i++) {
+            PSTRecipient rec = msg.getRecipient(i);
+            if (rec.getRecipientType() == recipientType) {
+                list.add(rec.getEmailAddress());
+            }
+        }
+        return list;
+    }
+
+    private Path createFolder(Path container, String displayName) {
+        // We need to create a folderish
+        String folderName = null;
+        if (isValidName(displayName)) {
+            folderName = getValidName(displayName);
+        } else {
+            folderName = "Folder";
+        }
+        String docName = container.append(folderName).toString();
+        LOG.warn("Creating: " + docName);
+        DocumentModel folderDoc = session.createDocumentModel(container.toString(), folderName, folderishType);
+        folderDoc.setPropertyValue("dc:title", folderName);
+        folderDoc = session.createDocument(folderDoc);
+        folderDoc = session.saveDocument(folderDoc);
+        inc();
+        return folderDoc.getPath();
+    }
+
+    private void inc() {
+        if (++saved == config.getCommitThreshold()) {
+            saved = 0;
+            LOG.info("Commit!");
+            commit();
+        }
     }
     
-    
+    private void commit() {
+        commitOrRollbackTransaction();
+        startTransaction();
+    }
 
 }
