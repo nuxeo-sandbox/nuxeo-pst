@@ -4,14 +4,24 @@
   <require>org.nuxeo.ecm.core.CoreExtensions</require>
   <require>org.nuxeo.ecm.platform.mail.core.types.contrib</require>
 
+  <extension point="mimetype" target="org.nuxeo.ecm.platform.mimetype.service.MimetypeRegistryService">
+    <mimetype binary="true" iconPath="file.png" normalized="application/vnd.ms-outlook">
+      <mimetypes>
+        <mimetype>application/vnd.ms-outlook</mimetype>
+      </mimetypes>
+      <extensions>
+        <extension>pab</extension>
+        <extension>pff</extension>
+        <extension>pst</extension>
+      </extensions>
+    </mimetype>
+  </extension>
+
   <extension target="org.nuxeo.ecm.core.schema.TypeService" point="schema">
-
     <schema name="pst" src="schemas/pst.xsd" prefix="pst"/>
-
   </extension>
 
   <extension target="org.nuxeo.ecm.core.schema.TypeService" point="doctype">
-
     <doctype name="PSTMessage" extends="MailMessage">
       <schema name="pst"/>
       <schema name="mail"/>
@@ -19,24 +29,21 @@
       <schema name="dublincore"/>
       <schema name="uid"/>
       <schema name="files"/>
-      <facet name="Commentable" />
-      <facet name="HiddenInCreation" />
-      <facet name="NXTag" />
+      <facet name="Commentable"/>
+      <facet name="HiddenInCreation"/>
+      <facet name="NXTag"/>
     </doctype>
-
     <doctype name="PSTFolder" extends="Folder">
       <subtypes>
         <type>PSTMessage</type>
       </subtypes>
     </doctype>
-
     <!-- allow mail folders within workspaces -->
     <doctype name="Workspace" append="true">
       <subtypes>
         <type>PSTFolder</type>
       </subtypes>
     </doctype>
-
   </extension>
 
 </component>

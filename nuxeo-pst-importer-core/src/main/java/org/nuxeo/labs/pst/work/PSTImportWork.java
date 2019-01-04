@@ -37,12 +37,9 @@ import com.pff.PSTRecipient;
 
 public class PSTImportWork extends TransientStoreWork {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
 
-    protected static final Log LOG = LogFactory.getLog(PSTImportWork.class);
+    protected static Log LOG = LogFactory.getLog(PSTImportWork.class);
 
     protected PSTImportConfig config = new PSTImportConfig();
 
@@ -116,9 +113,11 @@ public class PSTImportWork extends TransientStoreWork {
     @Override
     public void work() {
         setStatus("Importing");
+        setProgress(Progress.PROGRESS_0_PC);
 
         BlobHolder inputBlobHolder = retrieveInputBlobHolder();
         if (inputBlobHolder == null) {
+            setStatus(null);
             return;
         }
 
@@ -134,6 +133,7 @@ public class PSTImportWork extends TransientStoreWork {
             }
         }
 
+        setProgress(Progress.PROGRESS_100_PC);
         setStatus(null);
     }
 
@@ -168,8 +168,8 @@ public class PSTImportWork extends TransientStoreWork {
 
         // go through the folders...
         if (folder.hasSubfolders()) {
-            final Vector<PSTFolder> childFolders = folder.getSubFolders();
-            for (final PSTFolder childFolder : childFolders) {
+            Vector<PSTFolder> childFolders = folder.getSubFolders();
+            for (PSTFolder childFolder : childFolders) {
                 if (config.emptyFolders || childFolder.hasSubfolders() || childFolder.getContentCount() > 0) {
                     processFolder(container, childFolder);
                 }
@@ -184,9 +184,7 @@ public class PSTImportWork extends TransientStoreWork {
                 // Filter messages
                 if (config.test(child)) {
                     // Add message
-                    DocumentModel doc = createObject(container, child);
-                    if (doc != null)
-                        LOG.info("Added: " + doc);
+                    createObject(container, child);
                 }
 
                 // Get next message
@@ -225,14 +223,12 @@ public class PSTImportWork extends TransientStoreWork {
         } else {
             folderName = "Folder";
         }
-        String docName = container.append(folderName).toString();
-        LOG.warn("Creating: " + docName);
+
         DocumentModel folderDoc = session.createDocumentModel(container.toString(), folderName, folderishType);
         folderDoc.setPropertyValue("dc:title", folderName);
-        folderDoc.setPropertyValue("dc:created", folder.getCreationTime());
         folderDoc = session.createDocument(folderDoc);
         folderDoc = session.saveDocument(folderDoc);
-        inc();
+        savedSomething();
         return folderDoc.getPath();
     }
 
@@ -245,16 +241,14 @@ public class PSTImportWork extends TransientStoreWork {
         } else {
             itemName = "Mail Message (Subject Unreadable)";
         }
-        String docName = container.append(itemName).toString();
-        LOG.warn("Creating: " + docName);
+
         DocumentModel pstDoc = session.createDocumentModel(container.toString(), itemName, messageType);
         pstDoc.setPropertyValue("dc:title", itemName);
-        pstDoc.setPropertyValue("dc:created", msg.getCreationTime());
         try {
             populateMessage(msg, pstDoc);
             pstDoc = session.createDocument(pstDoc);
             pstDoc = session.saveDocument(pstDoc);
-            inc();
+            savedSomething();
             return pstDoc;
         } catch (PSTException | IOException e) {
             LOG.error("Error populating message", e);
@@ -330,10 +324,9 @@ public class PSTImportWork extends TransientStoreWork {
         return list;
     }
 
-    private void inc() {
-        if (++saved == config.getCommitThreshold()) {
+    private void savedSomething() {
+        if (++saved == config.commitThreshold) {
             saved = 0;
-            LOG.info("Commit!");
             commit();
         }
     }

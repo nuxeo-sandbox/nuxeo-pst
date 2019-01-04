@@ -27,7 +27,7 @@ import org.nuxeo.labs.pst.work.PSTImportWork;
 /**
  *
  */
-@Operation(id = ImportPST.ID, category = Constants.CAT_DOCUMENT, label = "Import PST", description = "Describe here what your operation does.")
+@Operation(id = ImportPST.ID, category = Constants.CAT_DOCUMENT, label = "Import PST", description = "Import a Microsoft Outlook compatible message archive.")
 public class ImportPST {
 
     public static final String ID = "Document.ImportPST";

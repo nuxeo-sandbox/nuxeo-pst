@@ -10,9 +10,6 @@ import com.pff.PSTObject;
 
 public class PSTImportConfig implements Serializable, Predicate<PSTObject> {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
 
     protected boolean attachments = true;
