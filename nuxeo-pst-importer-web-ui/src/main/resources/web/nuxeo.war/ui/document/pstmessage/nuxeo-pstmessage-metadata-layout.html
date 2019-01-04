@@ -30,9 +30,26 @@ limitations under the License.
       }
     </style>
 
+    <nuxeo-operation id="op" op="Repository.Query" params="[[_conversations(document)]]"></nuxeo-operation>
+
+    <div role="widget">
+      <label>[[i18n('label.mail.message.priority')]]</label>
+      <nuxeo-tag>[[document.properties.pst:priority]]</nuxeo-tag>
+    </div>
+
+    <div role="widget">
+      <label>[[i18n('label.mail.message.status')]]</label>
+      <nuxeo-tags items="[[messageStatus]]"></nuxeo-tags>
+    </div>
+
     <div role="widget">
       <label>[[i18n('label.mail.message.subject')]]</label>
       <div name="title">[[document.properties.dc:title]]</div>
+    </div>
+
+    <div role="widget" hidden$="[[!conversations.length]]">
+      <nuxeo-document-suggestion label="[[i18n('label.mail.message.conversations')]]" value="[[conversations]]"
+        readonly="true" role="widget" min-chars="0" multiple="true"></nuxeo-document-suggestion>
     </div>
 
     <div role="widget">
@@ -60,6 +77,11 @@ limitations under the License.
       <nuxeo-tags items="[[document.properties.mail:cc_recipients]]"></nuxeo-tags>
     </div>
 
+    <div role="widget" hidden$="[[!document.properties.pst:categories.length]]">
+      <label>[[i18n('label.mail.message.categories')]]</label>
+      <nuxeo-tags items="[[document.properties.pst:categories]]"></nuxeo-tags>
+    </div>
+
     <nuxeo-document-attachments role="widget" document="[[document]]"></nuxeo-document-attachments>
   </template>
   <script>
@@ -70,8 +92,60 @@ limitations under the License.
         /**
          * @doctype pstmessage
          */
-        document: Object
+        document: {
+          type: Object,
+          observer: '_documentChanged'
+        },
+
+        messageStatus: Array,
+
+        conversations: Array,
+      },
+
+      _documentChanged: function () {
+        if (this.document) {
+          // Clear array
+          this.messageStatus = [];
+
+          if (this.document.properties['pst:replied']) {
+            this.messageStatus.push("Replied");
+          }
+          if (this.document.properties['pst:forwarded']) {
+            this.messageStatus.push("Forwarded");
+          }
+          if (this.document.properties['pst:flagged']) {
+            this.messageStatus.push("Flagged");
+          }
+          if (this.document.properties['pst:fromSender']) {
+            this.messageStatus.push("From Sender");
+          }
+          if (this.document.properties['pst:read']) {
+            this.messageStatus.push("Read");
+          }
+          if (this.document.properties['pst:unsent']) {
+            this.messageStatus.push("Unsent");
+          }
+
+          if (this.document.properties["pst:conversation"]) {
+            this.$.op.params = this._conversations(this.document);
+            this.$.op.execute().then((res) => {
+              this.conversations = res.entries;
+            });
+          } else {
+            this.conversations = null;
+          }
+        }
+
+      },
+
+      _conversations: function (document) {
+        var query = "SELECT * FROM PSTMessage WHERE ecm:mixinType != 'HiddenInNavigation' AND " +
+          "ecm:isProxy = 0 AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND ecm:uuid != '" + document.uid +
+          "' AND pst:conversation = '" + document.properties["pst:conversation"] + "'";
+        return {
+          "query": query,
+        }
       }
-    });
+    }, );
   </script>
 </dom-module>

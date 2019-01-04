@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Stack;
+import java.util.UUID;
 import java.util.Vector;
 
 import org.apache.commons.lang3.StringUtils;
@@ -154,7 +155,7 @@ public class PSTImportWork extends TransientStoreWork {
         }
     }
 
-    protected void processFolder(Path parent, PSTFolder folder) throws PSTException, java.io.IOException {
+    protected void processFolder(Path parent, PSTFolder folder) throws PSTException, IOException {
         this.depth++;
         // the root folder doesn't have a display name
         Path container = parent;
@@ -162,14 +163,16 @@ public class PSTImportWork extends TransientStoreWork {
         if (this.depth > 0) {
             // System.out.println(folder.getDisplayName());
             folders.push(folder.getDisplayName());
-            container = createFolder(container, folder.getDisplayName());
+            container = createFolder(container, folder);
         }
 
         // go through the folders...
         if (folder.hasSubfolders()) {
             final Vector<PSTFolder> childFolders = folder.getSubFolders();
             for (final PSTFolder childFolder : childFolders) {
-                processFolder(container, childFolder);
+                if (config.emptyFolders || childFolder.hasSubfolders() || childFolder.getContentCount() > 0) {
+                    processFolder(container, childFolder);
+                }
             }
         }
 
@@ -200,9 +203,9 @@ public class PSTImportWork extends TransientStoreWork {
     }
 
     protected boolean isValidName(String name) {
-        return StringUtils.isNotBlank(name);
+        return StringUtils.isNotBlank(nullStrip(name));
     }
-    
+
     protected String nullStrip(String name) {
         return StringUtils.remove(name, '\0');
     }
@@ -212,6 +215,25 @@ public class PSTImportWork extends TransientStoreWork {
         name = StringUtils.replaceChars(name, '\\', '-');
         name = StringUtils.replaceChars(name, '/', '-');
         return name;
+    }
+
+    private Path createFolder(Path container, PSTFolder folder) {
+        // We need to create a folderish
+        String folderName = folder.getDisplayName();
+        if (isValidName(folderName)) {
+            folderName = getValidName(folderName);
+        } else {
+            folderName = "Folder";
+        }
+        String docName = container.append(folderName).toString();
+        LOG.warn("Creating: " + docName);
+        DocumentModel folderDoc = session.createDocumentModel(container.toString(), folderName, folderishType);
+        folderDoc.setPropertyValue("dc:title", folderName);
+        folderDoc.setPropertyValue("dc:created", folder.getCreationTime());
+        folderDoc = session.createDocument(folderDoc);
+        folderDoc = session.saveDocument(folderDoc);
+        inc();
+        return folderDoc.getPath();
     }
 
     private DocumentModel createObject(Path container, PSTObject child) {
@@ -227,7 +249,7 @@ public class PSTImportWork extends TransientStoreWork {
         LOG.warn("Creating: " + docName);
         DocumentModel pstDoc = session.createDocumentModel(container.toString(), itemName, messageType);
         pstDoc.setPropertyValue("dc:title", itemName);
-        pstDoc.setPropertyValue("dc:created", msg.getActionDate());
+        pstDoc.setPropertyValue("dc:created", msg.getCreationTime());
         try {
             populateMessage(msg, pstDoc);
             pstDoc = session.createDocument(pstDoc);
@@ -241,9 +263,11 @@ public class PSTImportWork extends TransientStoreWork {
     }
 
     private void populateMessage(PSTMessage msg, DocumentModel pstDoc) throws PSTException, IOException {
+        Property attachProp = pstDoc.getProperty("files:files");
+
         pstDoc.setPropertyValue("mail:messageId", msg.getInternetMessageId());
         pstDoc.setPropertyValue("mail:sender", msg.getSenderEmailAddress());
-        pstDoc.setPropertyValue("mail:sending_date", msg.getActionDate());
+        pstDoc.setPropertyValue("mail:sending_date", msg.getMessageDeliveryTime());
         pstDoc.setPropertyValue("mail:recipients", addressList(msg, PSTMessage.RECIPIENT_TYPE_TO));
         pstDoc.setPropertyValue("mail:cc_recipients", addressList(msg, PSTMessage.RECIPIENT_TYPE_CC));
         if (StringUtils.isNotBlank(msg.getBody())) {
@@ -252,8 +276,20 @@ public class PSTImportWork extends TransientStoreWork {
         if (StringUtils.isNotBlank(msg.getBodyHTML())) {
             pstDoc.setPropertyValue("mail:htmlText", msg.getBodyHTML());
         }
+        if (StringUtils.isNotBlank(msg.getRTFBody())) {
+            Blob ba = Blobs.createBlob(msg.getRTFBody(), "application/rtf");
+            ba.setFilename("message_body.rtf");
+            DocumentHelper.addBlob(attachProp, ba);
+        }
 
-        pstDoc.setPropertyValue("pst:priority", msg.getPriority());
+        if (msg.getConversationIndex() != null) {
+            UUID cid = msg.getConversationIndex().getGuid();
+            if (cid != null) {
+                pstDoc.setPropertyValue("pst:conversation", cid.toString());
+            }
+        }
+
+        pstDoc.setPropertyValue("pst:priority", priorityToString(msg.getPriority()));
         pstDoc.setPropertyValue("pst:replied", msg.hasReplied());
         pstDoc.setPropertyValue("pst:forwarded", msg.hasForwarded());
         pstDoc.setPropertyValue("pst:flagged", msg.isFlagged());
@@ -264,7 +300,6 @@ public class PSTImportWork extends TransientStoreWork {
 
         if (config.attachments && msg.hasAttachments()) {
             int attach = msg.getNumberOfAttachments();
-            Property attachProp = pstDoc.getProperty("files:files");
             for (int i = 0; i < attach; i++) {
                 PSTAttachment a = msg.getAttachment(i);
                 Blob ba = Blobs.createBlob(a.getFileInputStream(), nullStrip(a.getMimeTag()));
@@ -272,6 +307,15 @@ public class PSTImportWork extends TransientStoreWork {
                 DocumentHelper.addBlob(attachProp, ba);
             }
         }
+    }
+
+    private String priorityToString(int val) {
+        if (val <= PSTMessage.IMPORTANCE_LOW) {
+            return "Low";
+        } else if (val >= PSTMessage.IMPORTANCE_HIGH) {
+            return "High";
+        }
+        return "Normal";
     }
 
     private ArrayList<String> addressList(PSTMessage msg, int recipientType) throws PSTException, IOException {
@@ -284,24 +328,6 @@ public class PSTImportWork extends TransientStoreWork {
             }
         }
         return list;
-    }
-
-    private Path createFolder(Path container, String displayName) {
-        // We need to create a folderish
-        String folderName = null;
-        if (isValidName(displayName)) {
-            folderName = getValidName(displayName);
-        } else {
-            folderName = "Folder";
-        }
-        String docName = container.append(folderName).toString();
-        LOG.warn("Creating: " + docName);
-        DocumentModel folderDoc = session.createDocumentModel(container.toString(), folderName, folderishType);
-        folderDoc.setPropertyValue("dc:title", folderName);
-        folderDoc = session.createDocument(folderDoc);
-        folderDoc = session.saveDocument(folderDoc);
-        inc();
-        return folderDoc.getPath();
     }
 
     private void inc() {

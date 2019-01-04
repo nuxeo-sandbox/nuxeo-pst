@@ -18,6 +18,7 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.PathRef;
 import org.nuxeo.ecm.core.api.blobholder.BlobHolder;
+import org.nuxeo.ecm.core.api.blobholder.DocumentBlobHolder;
 import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
 import org.nuxeo.ecm.core.work.api.WorkManager;
 import org.nuxeo.labs.pst.work.PSTImportConfig;
@@ -70,16 +71,24 @@ public class ImportPST {
     @Param(name = "import.task", required = false, values = { "false" })
     protected boolean importTask = false;
 
+    @Param(name = "import.emptyFolders", required = false, values = { "false" })
+    protected boolean importEmptyFolders = false;
+
     @OperationMethod(collector = DocumentModelCollector.class)
     public DocumentModel run(DocumentModel doc) {
-        runWorker(doc.getAdapter(BlobHolder.class));
+        BlobHolder bh = null;
+        if (StringUtils.isNotBlank(xpath)) {
+            bh = new DocumentBlobHolder(doc, xpath);
+        } else {
+            bh = doc.getAdapter(BlobHolder.class);
+        }
+        runWorker(bh);
         return doc;
     }
 
     @OperationMethod(collector = BlobCollector.class)
     public Blob run(Blob blob) throws IOException, OperationException {
-        BlobHolder bh = new SimpleBlobHolder(blob);
-        runWorker(bh);
+        runWorker(new SimpleBlobHolder(blob));
         return blob;
     }
 
@@ -93,7 +102,7 @@ public class ImportPST {
         }
 
         PSTImportConfig config = new PSTImportConfig(importAttachments, importMessages, importActivity,
-                importAppointment, importContact, importDistributionList, importRss, importTask);
+                importAppointment, importContact, importDistributionList, importRss, importTask, importEmptyFolders);
         config.setParent(parent.getPath());
 
         PSTImportWork work = new PSTImportWork(UUID.randomUUID().toString(), bh, config);

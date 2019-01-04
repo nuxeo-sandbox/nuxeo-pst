@@ -4,7 +4,8 @@
 
   <xs:include schemaLocation="base.xsd"/>
 
-  <xs:element name="priority" type="xs:integer"/>
+  <xs:element name="conversation" type="xs:string"/>
+  <xs:element name="priority" type="xs:string"/>
   <xs:element name="replied" type="xs:boolean"/>
   <xs:element name="forwarded" type="xs:boolean"/>
   <xs:element name="flagged" type="xs:boolean"/>

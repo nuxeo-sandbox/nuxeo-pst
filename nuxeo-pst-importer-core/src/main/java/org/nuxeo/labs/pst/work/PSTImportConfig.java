@@ -30,6 +30,8 @@ public class PSTImportConfig implements Serializable, Predicate<PSTObject> {
     protected boolean rss = false;
 
     protected boolean task = false;
+    
+    protected boolean emptyFolders = false;
 
     protected int commitThreshold = 100;
 
@@ -40,7 +42,7 @@ public class PSTImportConfig implements Serializable, Predicate<PSTObject> {
     }
 
     public PSTImportConfig(boolean attachments, boolean messages, boolean activity, boolean appointment,
-            boolean contact, boolean distributionList, boolean rss, boolean task) {
+            boolean contact, boolean distributionList, boolean rss, boolean task, boolean emptyFolders) {
         super();
         this.attachments = attachments;
         this.messages = messages;
@@ -50,6 +52,7 @@ public class PSTImportConfig implements Serializable, Predicate<PSTObject> {
         this.distributionList = distributionList;
         this.rss = rss;
         this.task = task;
+        this.emptyFolders = emptyFolders;
     }
 
     public int getCommitThreshold() {
