@@ -1,0 +1,148 @@
+<!--
+@license
+(C) Copyright Nuxeo Corp. (http://nuxeo.com/)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<!--
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../iron-icon/iron-icon.html">
+<link rel="import" href="../../iron-icons/iron-icons.html">
+<link rel="import" href="../../iron-icons/social-icons.html">
+<link rel="import" href="../../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../../paper-input/paper-input.html">
+<link rel="import" href="../../paper-button/paper-button.html">
+<link rel="import" href="../widgets/nuxeo-dialog.html">
+<link rel="import" href="../nuxeo-i18n-behavior.html">
+<link rel="import" href="../nuxeo-filters-behavior.html">
+<link rel="import" href="../nuxeo-icons.html">
+<link rel="import" href="../nuxeo-operation.html">
+-->
+
+<!--
+A button element for importing a PST archive
+
+Example:
+
+    <nuxeo-pst-import document="[[document]]"></nuxeo-pst-import>
+
+@group Nuxeo UI
+@element nuxeo-pst-import
+-->
+<dom-module id="nuxeo-pst-import">
+    <template>
+        <style>
+            :host {
+                display: inline-block;
+            }
+        </style>
+
+        <nuxeo-operation id="pstImport" op="Document.ImportPST" input="[[document.uid]]" params="[[_params(remotePath)]]"></nuxeo-operation>
+
+        <template is="dom-if" if="[[_isAvailable(document)]]">
+            <div class="action" on-click="_toggleDialog">
+                <paper-icon-button icon="[[icon]]" noink></paper-icon-button>
+                <span class="label" hidden$="[[!showLabel]]">[[label]]</span>
+            </div>
+            <paper-tooltip>[[label]]</paper-tooltip>
+        </template>
+
+        <nuxeo-dialog id="dialog" with-backdrop>
+            <h2>Mail Archive Import</h2>
+
+            <nuxeo-path-suggestion label="Path" value="{{remotePath}}"></nuxeo-path-suggestion>
+
+            <div class="buttons">
+                <paper-button dialog-dismiss>Cancel</paper-button>
+                <paper-button class="primary" dialog-confirm on-click="_import">Import</paper-button>
+            </div>
+        </nuxeo-dialog>
+
+
+    </template>
+    <script>
+        Polymer({
+            is: 'nuxeo-pst-import',
+            behaviors: [Nuxeo.I18nBehavior, Nuxeo.FiltersBehavior],
+            properties: {
+
+                document: {
+                    type: Object,
+                    observer: "_documentChanged"
+                },
+
+                icon: {
+                    type: String,
+                    value: 'icons:play-for-work'
+                },
+
+                remotePath: {
+                    type: String,
+                    value: "/"
+                },
+
+                label: {
+                    type: String,
+                    value: "Import PST"
+                },
+
+                /**
+                 * `true` if the action should display the label, `false` otherwise.
+                 */
+                showLabel: {
+                    type: Boolean,
+                    value: false,
+                },
+            },
+
+            _isAvailable: function (document) {
+                return document;
+            },
+
+            _documentChanged: function () {
+                // New document
+                //this.remotePath = this.document.parent.path;
+            },
+
+            _toggleDialog: function () {
+                this.$.dialog.toggle();
+            },
+
+            _params: function (connection, remotePath) {
+                return {
+                    "destination": this.remotePath,
+                };
+            },
+
+            _import: function () {
+                if (this.document) {
+                    this.$.pstImport.execute().then(() => {
+                        this.fire('document-updated');
+                        this.fire('notify', {
+                            message: "Import Started"
+                        });
+                    }).catch((error) => {
+                        console.log(error);
+                        this.configured = "error";
+                        this.fire('notify', {
+                            message: "Import Failed: " + error
+                        });
+                    });
+                }
+            },
+
+        });
+    </script>
+</dom-module>

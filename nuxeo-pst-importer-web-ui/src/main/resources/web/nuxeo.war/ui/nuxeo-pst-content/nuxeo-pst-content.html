@@ -13,7 +13,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
+
+<link rel="import" href="nuxeo-pst-import.html">
+
 <script>
   // push PSTFolder to list of document types that are not available for import
   window.nuxeo.importBlacklist.push('PSTFolder');
 </script>
+
+<nuxeo-slot-content name="pst-import" slot="DOCUMENT_ACTIONS" order="15">
+  <template>
+    <nuxeo-filter document="[[document]]" permission="Read" expression="document.properties['file:content']['mime-type'] === 'application/vnd.ms-outlook'">
+      <template>
+        <nuxeo-pst-import document="[[document]]" label="Import Mail Archive"></nuxeo-pst-import>
+      </template>
+    </nuxeo-filter>
+  </template>
+</nuxeo-slot-content>
