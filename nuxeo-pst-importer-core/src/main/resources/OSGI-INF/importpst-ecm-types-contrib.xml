@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<component name="org.nuxeo.labs.pst.web.types.contrib">
+<component name="org.nuxeo.ecm.platform.mail.pst.types">
 
-  <require>org.nuxeo.labs.pst.core.types.contrib</require>
+  <require>org.nuxeo.ecm.platform.mail.pst.core.types</require>
 
   <extension target="org.nuxeo.ecm.platform.types.TypeService" point="types">
 

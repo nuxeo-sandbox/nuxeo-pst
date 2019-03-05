@@ -1,4 +1,4 @@
-package org.nuxeo.labs.pst.work;
+package org.nuxeo.ecm.platform.mail.pst.work;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -66,6 +66,11 @@ public class PSTImportWork extends TransientStoreWork {
 
     public PSTImportWork(String id, BlobHolder blobHolder, PSTImportConfig config) {
         super(id);
+
+        if (config == null) {
+            throw new NullPointerException("Configuration missing for PST Import");
+        }
+
         this.config = config;
         storeInputBlobHolder(blobHolder);
     }
@@ -161,7 +166,6 @@ public class PSTImportWork extends TransientStoreWork {
         Path container = parent;
 
         if (this.depth > 0) {
-            // System.out.println(folder.getDisplayName());
             folders.push(folder.getDisplayName());
             container = createFolder(container, folder);
         }
@@ -194,7 +198,6 @@ public class PSTImportWork extends TransientStoreWork {
         }
 
         if (this.depth > 0) {
-            // System.out.println(folder.getDisplayName());
             folders.pop();
         }
         this.depth--;

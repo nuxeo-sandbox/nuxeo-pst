@@ -1,4 +1,4 @@
-package org.nuxeo.labs.pst;
+package org.nuxeo.ecm.platform.mail.pst;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -21,8 +21,8 @@ import org.nuxeo.ecm.core.api.blobholder.BlobHolder;
 import org.nuxeo.ecm.core.api.blobholder.DocumentBlobHolder;
 import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
 import org.nuxeo.ecm.core.work.api.WorkManager;
-import org.nuxeo.labs.pst.work.PSTImportConfig;
-import org.nuxeo.labs.pst.work.PSTImportWork;
+import org.nuxeo.ecm.platform.mail.pst.work.PSTImportConfig;
+import org.nuxeo.ecm.platform.mail.pst.work.PSTImportWork;
 
 /**
  *
@@ -101,9 +101,18 @@ public class ImportPST {
                     destination.startsWith("/") ? new PathRef(destination) : new IdRef(destination));
         }
 
-        PSTImportConfig config = new PSTImportConfig(importAttachments, importMessages, importActivity,
-                importAppointment, importContact, importDistributionList, importRss, importTask, importEmptyFolders);
-        config.setParent(parent.getPath());
+        PSTImportConfig config = PSTImportConfig.builder()
+                                                .attachments(importAttachments)
+                                                .messages(importMessages)
+                                                .activity(importActivity)
+                                                .appointment(importAppointment)
+                                                .contact(importContact)
+                                                .distributionList(importDistributionList)
+                                                .rss(importRss)
+                                                .task(importTask)
+                                                .emptyFolders(importEmptyFolders)
+                                                .parent(parent.getPath())
+                                                .build();
 
         PSTImportWork work = new PSTImportWork(UUID.randomUUID().toString(), bh, config);
         if (async) {

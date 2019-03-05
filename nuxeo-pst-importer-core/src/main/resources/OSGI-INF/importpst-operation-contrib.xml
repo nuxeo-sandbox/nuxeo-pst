@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<component name="org.nuxeo.labs.pst.operation.importpst" version="1.0">
+<component name="org.nuxeo.ecm.platform.mail.pst.operations" version="1.0">
 
   <extension point="operations" target="org.nuxeo.ecm.core.operation.OperationServiceComponent">
-    <operation class="org.nuxeo.labs.pst.ImportPST"/>
+    <operation class="org.nuxeo.ecm.platform.mail.pst.ImportPST"/>
   </extension>
 
 </component>

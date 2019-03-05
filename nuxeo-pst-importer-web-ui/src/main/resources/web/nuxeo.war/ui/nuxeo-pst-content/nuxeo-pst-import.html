@@ -16,22 +16,6 @@ limitations under the License.
 -->
 
 <!--
-<link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../../iron-icon/iron-icon.html">
-<link rel="import" href="../../iron-icons/iron-icons.html">
-<link rel="import" href="../../iron-icons/social-icons.html">
-<link rel="import" href="../../paper-icon-button/paper-icon-button.html">
-<link rel="import" href="../../paper-tooltip/paper-tooltip.html">
-<link rel="import" href="../../paper-input/paper-input.html">
-<link rel="import" href="../../paper-button/paper-button.html">
-<link rel="import" href="../widgets/nuxeo-dialog.html">
-<link rel="import" href="../nuxeo-i18n-behavior.html">
-<link rel="import" href="../nuxeo-filters-behavior.html">
-<link rel="import" href="../nuxeo-icons.html">
-<link rel="import" href="../nuxeo-operation.html">
--->
-
-<!--
 A button element for importing a PST archive
 
 Example:
@@ -60,13 +44,13 @@ Example:
         </template>
 
         <nuxeo-dialog id="dialog" with-backdrop>
-            <h2>Mail Archive Import</h2>
+            <h2>[[i18n('label.mail.pst.import')]]</h2>
 
-            <nuxeo-path-suggestion label="Path" value="{{remotePath}}"></nuxeo-path-suggestion>
+            <nuxeo-path-suggestion label="[[i18n('defaultSearch.path')]]" value="{{remotePath}}"></nuxeo-path-suggestion>
 
             <div class="buttons">
-                <paper-button dialog-dismiss>Cancel</paper-button>
-                <paper-button class="primary" dialog-confirm on-click="_import">Import</paper-button>
+                <paper-button dialog-dismiss>[[i18n('command.cancel')]]</paper-button>
+                <paper-button class="primary" dialog-confirm on-click="_import">[[i18n('documentCreatePopup.import')]]</paper-button>
             </div>
         </nuxeo-dialog>
 
@@ -79,8 +63,7 @@ Example:
             properties: {
 
                 document: {
-                    type: Object,
-                    observer: "_documentChanged"
+                    type: Object
                 },
 
                 icon: {
@@ -109,11 +92,6 @@ Example:
 
             _isAvailable: function (document) {
                 return document;
-            },
-
-            _documentChanged: function () {
-                // New document
-                //this.remotePath = this.document.parent.path;
             },
 
             _toggleDialog: function () {

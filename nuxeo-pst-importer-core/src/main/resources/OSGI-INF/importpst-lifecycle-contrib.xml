@@ -1,7 +1,7 @@
-<component name="org.nuxeo.labs.pst.lifecycle.contrib">
+<component name="org.nuxeo.ecm.platform.mail.pst.lifecycle">
 
   <require>org.nuxeo.ecm.core.CoreExtensions</require>
-  <require>org.nuxeo.labs.pst.core.types.contrib</require>
+  <require>org.nuxeo.ecm.platform.mail.pst.core.types</require>
 
   <extension target="org.nuxeo.ecm.core.lifecycle.LifeCycleService" point="types">
     <types>

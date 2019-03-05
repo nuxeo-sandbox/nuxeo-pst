@@ -117,7 +117,9 @@ limitations under the License.
         margin: 0 24px;
       }
 
-      .subject, .text, .date {
+      .subject,
+      .text,
+      .date {
         font-size: .9rem;
       }
 
@@ -183,28 +185,34 @@ limitations under the License.
         '_selectedItemsChanged(selectedItems.splices)'
       ],
 
-      handleClick: function(e) {
+      handleClick: function (e) {
         if (this.selectionMode) {
           this._toogleSelect(e);
         } else if (!(e.ctrlKey || e.shiftKey || e.metaKey || e.button === 1)) {
-          this.fire('navigate', {item: this.doc, index: this.index});
+          this.fire('navigate', {
+            item: this.doc,
+            index: this.index
+          });
         }
       },
 
-      _onCheckBoxTap: function(e) {
+      _onCheckBoxTap: function (e) {
         this._toogleSelect(e);
       },
 
-      _toogleSelect: function(e) {
+      _toogleSelect: function (e) {
         this.selected = !this.selected;
-        this.fire('selected', {index: this.index, shiftKey: e.detail.sourceEvent.shiftKey});
+        this.fire('selected', {
+          index: this.index,
+          shiftKey: e.detail.sourceEvent.shiftKey
+        });
       },
 
-      _selectedItemsChanged: function() {
+      _selectedItemsChanged: function () {
         this.selectionMode = this.selectedItems && this.selectedItems.length > 0;
       },
 
-      _computeSender: function(item) {
+      _computeSender: function (item) {
         var match = this._getSenderRegexParts(item);
         if (match && match.length > 2) {
           var alias = match[1];
@@ -213,26 +221,27 @@ limitations under the License.
         }
       },
 
-      _computeSenderEmail: function(item) {
+      _computeSenderEmail: function (item) {
         var match = this._getSenderRegexParts(item);
         if (match && match.length > 2) {
           return match[2];
         }
       },
 
-      _getSenderRegexParts: function(item) {
+      _getSenderRegexParts: function (item) {
         if (item && item.properties) {
           var regex = /(.*)<([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4})>/i;
           return regex.exec(item.properties['mail:sender']);
         }
       },
 
-      _computedAttachmentClass: function(item) {
+      _computedAttachmentClass: function (item) {
         return this._hasAttachments(item) ? '' : 'invisible';
       },
 
-      _hasAttachments: function(item) {
-        return item && item.properties && item.properties['files:files'] && item.properties['files:files'].length > 0;
+      _hasAttachments: function (item) {
+        return item && item.properties && item.properties['files:files'] && item.properties['files:files'].length >
+          0;
       }
     });
   </script>

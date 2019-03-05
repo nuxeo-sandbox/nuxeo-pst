@@ -36,7 +36,23 @@ mvn clean install
 
 ## Operation
 
-`TBD`
+### `Document.ImportPST`
+
+Accepts: Documents, Document, Blobs, Blob
+
+|Parameter|Description|Default Value|
+|---------|-----------|-------------|
+|xpath|Document blob XPath|file:content|
+|destination|Destination import path|(null)|
+|import.emptyFolders|Import empty folders|true|
+|import.attachments|Import attachments|true|
+|import.messages|Import messages|true|
+|import.activity|Import activity|false|
+|import.appointment|Import appointment|false|
+|import.contact|Import contact|false|
+|import.distributionList|Import Distribution List|false|
+|import.rss|Import RSS feed|false|
+|import.task|Import Task|false|
 
 ## Support
 

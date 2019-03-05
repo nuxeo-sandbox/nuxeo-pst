@@ -1,4 +1,5 @@
 {
+    "label.mail.pst.import": "Import Mail Archive",
     "label.mail.message.categories": "Categories",
     "label.mail.message.conversations": "Related Conversations",
     "label.mail.message.priority": "Priority",
