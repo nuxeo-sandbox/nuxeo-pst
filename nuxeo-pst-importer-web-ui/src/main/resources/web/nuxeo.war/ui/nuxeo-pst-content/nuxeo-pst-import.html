@@ -38,9 +38,9 @@ Example:
         <template is="dom-if" if="[[_isAvailable(document)]]">
             <div class="action" on-click="_toggleDialog">
                 <paper-icon-button icon="[[icon]]" noink></paper-icon-button>
-                <span class="label" hidden$="[[!showLabel]]">[[label]]</span>
+                <span class="label" hidden$="[[!showLabel]]">[[i18n(label)]]</span>
             </div>
-            <paper-tooltip>[[label]]</paper-tooltip>
+            <paper-tooltip>[[i18n(label)]]</paper-tooltip>
         </template>
 
         <nuxeo-dialog id="dialog" with-backdrop>
